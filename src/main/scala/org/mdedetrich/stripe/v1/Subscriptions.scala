@@ -428,4 +428,78 @@ object Subscriptions extends LazyLogging {
 
     createRequestPOST[Subscription](finalUrl, postFormParameters, idempotencyKey, logger)
   }
+
+  case class SubscriptionUpdateInput(
+    plan: String,
+    applicationFeePercent: Option[BigDecimal] = None,
+    coupon: Option[String] = None,
+    source: Option[Source] = None,
+    quantity: Option[Long] = None,
+    prorate: Option[Boolean] = None,
+    metadata: Option[Map[String, String]] = None,
+    taxPercent: Option[BigDecimal] = None,
+    trialEnd: Option[OffsetDateTime] = None)
+
+
+  def update(id: String, subscriptionInput: SubscriptionUpdateInput)(idempotencyKey: Option[IdempotencyKey] = None)(
+    implicit apiKey: ApiKey,
+    endpoint: Endpoint,
+    client: HttpExt,
+    materializer: Materializer,
+    executionContext: ExecutionContext): Future[Try[Subscription]] = {
+
+    val postFormParameters = PostParams.flatten(
+      Map(
+        "application_fee_percent" -> subscriptionInput.applicationFeePercent.map(_.toString()),
+        "coupon"                  -> subscriptionInput.coupon,
+        "plan"                    -> Option(subscriptionInput.plan),
+        "quantity"                -> subscriptionInput.quantity.map(_.toString),
+        "prorate"                 -> subscriptionInput.prorate.map(_.toString),
+        "tax_percent"             -> subscriptionInput.taxPercent.map(_.toString()),
+        "trial_end"               -> subscriptionInput.trialEnd.map(stripeDateTimeParamWrites)
+      )) ++ mapToPostParams(subscriptionInput.metadata, "metadata") ++ {
+      subscriptionInput.source match {
+        case Some(
+        Source.Card(
+        expMonth,
+        expYear,
+        number,
+        addressCountry,
+        addressLine1,
+        addressLine2,
+        addressState,
+        addressZip,
+        cvc,
+        name
+        )) =>
+          val map = PostParams.flatten(
+            Map(
+              "exp_month"       -> Option(expMonth.toString),
+              "exp_year"        -> Option(expYear.toString),
+              "number"          -> Option(number),
+              "address_country" -> addressCountry,
+              "address_line1"   -> addressLine1,
+              "address_line2"   -> addressLine2,
+              "address_state"   -> addressState,
+              "address_zip"     -> addressZip,
+              "cvc"             -> cvc,
+              "name"            -> name
+            ))
+          mapToPostParams(Option(map), "card")
+        case Some(Source.Token(id)) =>
+          Map("source" -> id)
+        case None =>
+          Map.empty
+      }
+    }
+
+    logger.debug(s"Generated POST form parameters is $postFormParameters")
+
+    val finalUrl = endpoint.url + s"/v1/subscriptions/${id}"
+
+    createRequestPOST[Subscription](finalUrl, postFormParameters, idempotencyKey, logger)
+  }
+
+
+
 }

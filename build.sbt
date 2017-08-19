@@ -6,7 +6,7 @@ val currentScalaVersion = "2.12.2"
 val scala211Version     = "2.11.11"
 val circeVersion        = "0.8.0"
 
-scalaVersion := currentScalaVersion
+scalaVersion := scala211Version
 
 crossScalaVersions := Seq(currentScalaVersion, scala211Version)
 

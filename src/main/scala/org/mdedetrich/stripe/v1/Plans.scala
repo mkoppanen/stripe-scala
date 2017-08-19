@@ -308,13 +308,8 @@ object Plans extends LazyLogging {
       materializer: Materializer,
       executionContext: ExecutionContext): Future[Try[PlanList]] = {
     val finalUrl = {
-      val totalCountUrl =
-        if (includeTotalCount)
-          "/include[]=total_count"
-        else
-          ""
 
-      val baseUrl = endpoint.url + s"/v1/customers$totalCountUrl"
+      val baseUrl = endpoint.url + s"/v1/plans"
 
       val created: Uri = planListInput.created match {
         case Some(createdInput) =>
