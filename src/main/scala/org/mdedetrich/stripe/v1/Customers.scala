@@ -205,13 +205,19 @@ object Customers extends LazyLogging {
 
   case class CustomerUpdate(
       paymentSource: Option[Token] = None,
-      defaultSource: Option[String] = None
+      defaultSource: Option[String] = None,
+      email: Option[String] = None,
+      description: Option[String] = None,
+      businessVatId: Option[String] = None
   )
 
   implicit val customerUpdatePostParams: PostParams[CustomerUpdate] = PostParams.params[CustomerUpdate] { t =>
     val params = Map(
-      "source"         -> t.paymentSource.map(_.id),
-      "default_source" -> t.defaultSource
+      "source"          -> t.paymentSource.map(_.id),
+      "default_source"  -> t.defaultSource,
+      "email"           -> t.email,
+      "description"     -> t.description,
+      "business_vat_id" -> t.businessVatId
     )
     PostParams.flatten(params)
   }
